@@ -194,8 +194,8 @@ generateShortFunc.cfnResources.cfnFunction.environment = {
   }
 }
 
-// Download video from URL
-const downloadVideoStack = backend.createStack("DownloadVideoStack");
+// Download video from URL - use same stack as downloadVideoFunction to avoid circular deps
+const downloadVideoStack = backend.downloadVideoFunction.stack;
 const downloadVideoUrl = new DownloadVideoUrl(
   downloadVideoStack,
   "DownloadVideoUrl",
