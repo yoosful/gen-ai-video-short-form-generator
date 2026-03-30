@@ -67,3 +67,23 @@ export const subscribeHistory = async (id:string) => {
     }
   });
 }
+
+export const downloadVideoFromUrl = async (
+  videoUrl: string,
+  videoName: string,
+  modelID: string,
+  numberOfVideos: number = 1,
+  theme: string = "general",
+  videoLength: number = 60
+) => {
+  const { data } = await client.mutations.downloadVideo({
+    videoUrl,
+    videoName,
+    modelID,
+    numberOfVideos,
+    theme,
+    videoLength
+  });
+
+  return data;
+}

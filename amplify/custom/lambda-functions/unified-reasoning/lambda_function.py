@@ -183,12 +183,20 @@ CRITICAL NOTES:
     system_prompts = [{"text": f"You are an AI assistant that extracts {theme}-focused segments from video transcripts for short-form content."}]
 
     try:
-        if modelID == 'us.anthropic.claude-3-7-sonnet-20250219-v1:0':
+        # Models that support extended thinking
+        EXTENDED_THINKING_MODELS = [
+            'us.anthropic.claude-opus-4-6-v1:0',
+            'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
+        ]
+
+        if modelID in EXTENDED_THINKING_MODELS:
+            # Use higher budget for Opus 4.6
+            budget_tokens = 80000 if 'opus-4-6' in modelID else 60000
             config = {
-                "max_tokens": 64000,
+                "max_tokens": 128000 if 'opus-4-6' in modelID else 64000,
                 "thinking": {
                     "type": "enabled",
-                    "budget_tokens": 60000
+                    "budget_tokens": budget_tokens
                 }
             }
             response = bedrock_runtime.converse(

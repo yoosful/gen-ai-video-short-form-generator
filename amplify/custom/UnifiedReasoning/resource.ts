@@ -23,7 +23,7 @@ export class UnifiedReasoning extends Construct {
       handler: 'lambda_function.lambda_handler',
       code: lambda.Code.fromAsset('amplify/custom/lambda-functions/unified-reasoning'),
       timeout: Duration.minutes(15),
-      memorySize: 1024,
+      memorySize: 2048,  // Increased for Opus 4.6 extended thinking
       environment: {
         BUCKET_NAME: props.bucket.bucketName,
         HISTORY_TABLE_NAME: props.historyTable.tableName,

@@ -11,6 +11,12 @@ export interface ModelOption {
 
 export const modelOptions: ModelOption[] = [
   {
+    name: "Claude Opus 4.6 (Recommended)",
+    logo: "logos/anthropic-logo.png",
+    modelId: "us.anthropic.claude-opus-4-6-v1:0",
+    provider: "Anthropic"
+  },
+  {
     name: "Nova Lite",
     logo: "logos/anthropic-logo.png",
     modelId: "us.amazon.nova-lite-v1:0",

@@ -114,6 +114,7 @@ export class VideoUploadStateMachine extends Construct {
 
     const checkModelId = new sfn.Choice(this, 'CheckModelId')
       .when(sfn.Condition.or(
+        sfn.Condition.stringEquals("$.modelInfo.Item.modelID.S", "us.anthropic.claude-opus-4-6-v1:0"),
         sfn.Condition.stringEquals("$.modelInfo.Item.modelID.S", "us.anthropic.claude-3-7-sonnet-20250219-v1:0"),
         sfn.Condition.stringEquals("$.modelInfo.Item.modelID.S", "us.deepseek.r1-v1:0")
       ), startUnifiedReasoning)

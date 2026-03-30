@@ -8,3 +8,4 @@ export { VideoUploadStateMachine } from './step-functions/VideoUploadStateMachin
 export { GenerateShortStateMachine } from './step-functions/GenerateShortStateMachine';
 export { UnifiedReasoningStateMachine } from './step-functions/UnifiedReasoningStateMachine';
 export { UnifiedReasoning } from './UnifiedReasoning/resource';
+export { DownloadVideoUrl } from './DownloadVideoUrl/resource';

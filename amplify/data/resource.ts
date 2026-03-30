@@ -9,6 +9,11 @@ export const generateShortFunction = defineFunction({
   resourceGroupName: "data"
 });
 
+export const downloadVideoFunction = defineFunction({
+  entry: "./downloadVideo.ts",
+  resourceGroupName: "data"
+});
+
 const schema = a.schema({
   History: a
     .model({
@@ -86,6 +91,19 @@ const schema = a.schema({
     .returns(a.string())
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(generateShortFunction)),
+
+  downloadVideo: a.mutation()
+    .arguments({
+      videoUrl: a.string().required(),
+      videoName: a.string().required(),
+      modelID: a.string().required(),
+      numberOfVideos: a.integer(),
+      theme: a.string(),
+      videoLength: a.integer(),
+    })
+    .returns(a.string())
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(downloadVideoFunction)),
 
 });
 
