@@ -22,20 +22,22 @@ export const fetchHistory = async () => {
 };
 
 export const createHistory = async (
-  videoName: string, 
-  modelID: string, 
+  videoName: string,
+  modelID: string,
   numberOfVideos: number = 1,
   theme: string = "general",
-  videoLength: number = 60
+  videoLength: number = 60,
+  sourceType: string = "upload"
 ) => {
-  const { data: newHistory } = await client.models.History.create({ 
+  const { data: newHistory } = await client.models.History.create({
     videoName,
     modelID,
     shortified: false,
     stage: 0,
     numberOfVideos,
     theme,
-    videoLength
+    videoLength,
+    sourceType
   });
 
   return newHistory;

@@ -25,6 +25,7 @@ const schema = a.schema({
       numberOfVideos: a.integer().required(),
       theme: a.string().required(),
       videoLength: a.integer().required(),
+      sourceType: a.string(),
     })
     .authorization((allow) => [allow.owner()]),
 

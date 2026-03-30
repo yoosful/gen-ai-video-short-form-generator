@@ -40,7 +40,8 @@ const VideoUploadComponent: React.FC = () => {
         selectedModel.value,
         parseInt(numberOfVideos),
         theme || "general",
-        parseInt(videoLength)
+        parseInt(videoLength),
+        "url"
       );
 
       if (!history) {

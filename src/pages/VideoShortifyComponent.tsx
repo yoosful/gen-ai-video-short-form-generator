@@ -1,4 +1,4 @@
-import { Box, Link,  Spinner,  Wizard } from '@cloudscape-design/components';
+import { Box, Flashbar, Link, Spinner, Wizard } from '@cloudscape-design/components';
 import React, { useEffect, useState, useRef } from 'react';
 
 import { readHistory } from '../apis/history';
@@ -17,7 +17,10 @@ interface VideoShortifyProps {
 const VideoShortify: React.FC<VideoShortifyProps> = () => {
 
   const { id } = useParams();
-  const [ stage, setStage ] = useState(-1);
+  const [ stage, setStage ] = useState<number | null>(null);
+  const [ sourceType, setSourceType ] = useState<string | null>(null);
+  const [ loading, setLoading ] = useState(true);
+  const [ error, setError ] = useState<string | null>(null);
   const [ selectedTab, setSelectedTab ] = useState(0);
   const [ highlightTitle, setHighlightTitle ] = useState("")
   const [ isLoadingNextStep, setIsLoadingNextStep ] = useState(false);
@@ -33,8 +36,20 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
   useEffect(() => {
     console.log("subscribe", id!)
     readHistory(id!).then((history) => {
-      setStage(history!.stage);
-    })
+      if (!history) {
+        setError("History record not found.");
+        setLoading(false);
+        return;
+      }
+      setStage(history.stage);
+      setSourceType(history.sourceType ?? null);
+      setLoading(false);
+    }).catch((err) => {
+      console.error("Failed to read history:", err);
+      setError("Failed to load history.");
+      setLoading(false);
+    });
+
     const sub = subscribe(id!).subscribe({
       next: (event) => {
         console.log(event);
@@ -62,10 +77,62 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
     }
   }
 
-  if(stage === -1)
+  if(loading)
     return <Box textAlign='center'><Spinner size='large'/></Box>
 
-  
+  if(error)
+    return <Box textAlign='center'><Flashbar items={[{ type: "error", content: error }]} /></Box>
+
+  if(stage === -1)
+    return <Box textAlign='center'><Flashbar items={[{ type: "error", content: "Processing failed. Please try again." }]} /></Box>
+
+  const isUrlDownload = sourceType === "url";
+
+  const downloadStep = {
+    title: "Download video",
+    info: <Link variant="info">Info</Link>,
+    description: "Downloading video from URL. This may take a few minutes depending on video size.",
+    content: (
+      stage! > 0 ?
+      <Flashbar items={[{ type: "success", content: "Video downloaded and uploaded successfully." }]} />
+      : <InProgressComponent />
+    )
+  };
+
+  const transcribeStep = {
+    title: "Transcribe video",
+    info: <Link variant="info">Info</Link>,
+    description:
+      "It converts the audio of the video into text. This process may take about 5 minutes.",
+    content: (
+      stage! > 0 ?
+      <TranscribeComponent id={id!}/>
+      : <InProgressComponent />
+    )
+  };
+
+  const highlightStep = {
+    title: "Generate highlights",
+    content: (
+      stage! > 1 ?
+      <HighlightComponent id={id!} onTabChange={onTabChangeHandler}/>
+      : <InProgressComponent />
+    ),
+  };
+
+  const shortifyStep = {
+    title: "Shortify highlight",
+    content: (
+      stage! > 2 ?
+      <ShortifyComponent id={id!} tab={selectedTab} title={highlightTitle} ref={childRef}/>
+      : <InProgressComponent />
+    ),
+  };
+
+  const steps = isUrlDownload
+    ? [downloadStep, transcribeStep, highlightStep, shortifyStep]
+    : [transcribeStep, highlightStep, shortifyStep];
+
   return (
     <>
     <Wizard
@@ -88,35 +155,7 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
       activeStepIndex={activeStepIndex}
       isLoadingNextStep={isLoadingNextStep}
       onSubmit={onSubmitHandler}
-      steps={[
-        {
-          title: "Transcribe video",
-          info: <Link variant="info">Info</Link>,
-          description:
-            "It converts the audio of the video into text. This process may take about 5 minutes.",
-          content: (
-            stage > 0 ?
-            <TranscribeComponent id={id!}/>
-            : <InProgressComponent />
-          )
-        },
-        {
-          title: "Generate highlights",
-          content: (
-            stage > 1 ?
-            <HighlightComponent id={id!} onTabChange={onTabChangeHandler}/>
-            : <InProgressComponent />
-          ),
-        },
-        {
-          title: "Shortify highlight",
-          content: (
-            stage > 2 ?
-            <ShortifyComponent id={id!} tab={selectedTab} title={highlightTitle} ref={childRef}/>
-            : <InProgressComponent />
-          ),
-        }
-      ]}
+      steps={steps}
 
     />
     </>

@@ -59,7 +59,7 @@ const ShortsHistory: React.FC<ShortsHistoryProps> = () => {
         {
           id: "videoName",
           header: "Video Name",
-          cell: item => <Link href={`history/${item.id}`} key={item.id}>{item.videoName}</Link>,
+          cell: item => <Link href={`/history/${item.id}`} key={item.id}>{item.videoName}</Link>,
           isRowHeader: true
         },
         {
