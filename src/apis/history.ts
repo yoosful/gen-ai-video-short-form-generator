@@ -72,6 +72,7 @@ export const downloadVideoFromUrl = async (
   videoUrl: string,
   videoName: string,
   modelID: string,
+  historyId: string,
   numberOfVideos: number = 1,
   theme: string = "general",
   videoLength: number = 60
@@ -80,6 +81,7 @@ export const downloadVideoFromUrl = async (
     videoUrl,
     videoName,
     modelID,
+    historyId,
     numberOfVideos,
     theme,
     videoLength

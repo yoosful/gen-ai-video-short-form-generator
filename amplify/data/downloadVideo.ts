@@ -1,6 +1,5 @@
 import type { Schema } from "./resource";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
-import { v4 as uuidv4 } from 'uuid';
 
 const lambdaClient = new LambdaClient();
 
@@ -11,19 +10,19 @@ export const handler: Schema["downloadVideo"]["functionHandler"] = async (
     videoUrl,
     videoName,
     modelID,
+    historyId,
     numberOfVideos = 1,
     theme = "general",
     videoLength = 60
   } = event.arguments;
 
-  const uuid = uuidv4();
-  const owner = event.identity && 'sub' in event.identity ? event.identity.sub : 'anonymous';
+  const uuid = historyId;
   const downloadLambdaArn = process.env.DOWNLOAD_LAMBDA_ARN;
   const historyTableName = process.env.HISTORY_TABLE_NAME;
   const bucketName = process.env.BUCKET_NAME;
 
   try {
-    // Invoke download Lambda asynchronously - it will create the history record
+    // Invoke download Lambda asynchronously - history record already created by frontend
     const command = new InvokeCommand({
       FunctionName: downloadLambdaArn,
       InvocationType: 'Event',  // Async invocation
@@ -35,7 +34,6 @@ export const handler: Schema["downloadVideo"]["functionHandler"] = async (
         numberOfVideos,
         theme,
         videoLength,
-        owner,
         historyTableName,
         bucketName
       })

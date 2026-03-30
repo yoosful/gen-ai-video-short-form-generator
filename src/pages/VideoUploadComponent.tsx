@@ -33,8 +33,9 @@ const VideoUploadComponent: React.FC = () => {
     setIsDownloading(true);
     try {
       const videoName = videoUrl.split('/').pop() || 'downloaded-video';
-      const result = await downloadVideoFromUrl(
-        videoUrl,
+
+      // Create history record first so it exists before navigating
+      const history = await createHistory(
         videoName,
         selectedModel.value,
         parseInt(numberOfVideos),
@@ -42,12 +43,22 @@ const VideoUploadComponent: React.FC = () => {
         parseInt(videoLength)
       );
 
-      if (result) {
-        const parsed = JSON.parse(result);
-        if (parsed.body?.uuid) {
-          navigate(`/history/${parsed.body.uuid}`);
-        }
+      if (!history) {
+        throw new Error('Failed to create history record');
       }
+
+      // Start async download - Lambda will upload to S3 using the history ID
+      await downloadVideoFromUrl(
+        videoUrl,
+        videoName,
+        selectedModel.value,
+        history.id,
+        parseInt(numberOfVideos),
+        theme || "general",
+        parseInt(videoLength)
+      );
+
+      navigate(`/history/${history.id}`);
     } catch (error) {
       console.error('Download error:', error);
       alert('Failed to start download. Please check the URL and try again.');

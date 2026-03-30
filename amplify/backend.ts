@@ -215,14 +215,6 @@ downloadVideoFunc.lambda.addToRolePolicy(
   }),
 );
 
-downloadVideoFunc.lambda.addToRolePolicy(
-  new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ["dynamodb:PutItem"],
-    resources: [historyTable.tableArn],
-  }),
-);
-
 downloadVideoFunc.cfnResources.cfnFunction.environment = {
   variables: {
     DOWNLOAD_LAMBDA_ARN: downloadVideoUrl.handler.functionArn,

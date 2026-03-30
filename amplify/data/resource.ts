@@ -97,6 +97,7 @@ const schema = a.schema({
       videoUrl: a.string().required(),
       videoName: a.string().required(),
       modelID: a.string().required(),
+      historyId: a.string().required(),
       numberOfVideos: a.integer(),
       theme: a.string(),
       videoLength: a.integer(),

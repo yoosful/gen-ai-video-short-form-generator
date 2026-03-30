@@ -2,7 +2,6 @@ import json
 import boto3
 import subprocess
 import os
-from datetime import datetime
 
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
@@ -19,11 +18,6 @@ def lambda_handler(event, context):
     video_url = event['videoUrl']
     video_id = event['uuid']
     video_name = event.get('videoName', 'downloaded-video')
-    model_id = event['modelID']
-    num_videos = event.get('numberOfVideos', 1)
-    theme = event.get('theme', 'general')
-    video_length = event.get('videoLength', 60)
-    owner = event.get('owner', 'anonymous')
 
     # Download directory (Lambda /tmp has up to 10GB with ephemeral storage)
     download_path = f"/tmp/{video_id}"
@@ -31,23 +25,6 @@ def lambda_handler(event, context):
     output_file = f"{download_path}/RAW.mp4"
 
     history_table = dynamodb.Table(history_table_name)
-
-    # Create History record first
-    timestamp = datetime.now().isoformat() + 'Z'
-    history_table.put_item(Item={
-        'id': video_id,
-        'videoName': video_name,
-        'modelID': model_id,
-        'shortified': False,
-        'stage': 0,
-        'numberOfVideos': num_videos,
-        'theme': theme,
-        'videoLength': video_length,
-        'owner': owner,
-        'createdAt': timestamp,
-        'updatedAt': timestamp,
-        '__typename': 'History'
-    })
 
     try:
         # Use yt-dlp to download video
