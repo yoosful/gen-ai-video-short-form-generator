@@ -53,7 +53,7 @@ def lambda_handler(event, context):
         # Use yt-dlp to download video
         yt_dlp_path = '/opt/python/bin/yt-dlp'
 
-        # Download video
+        # Download video with bot detection workarounds
         result = subprocess.run([
             yt_dlp_path,
             '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -63,6 +63,10 @@ def lambda_handler(event, context):
             '--max-filesize', '2G',  # 2GB limit as decided
             '--no-warnings',
             '--no-progress',
+            # Bot detection workarounds for YouTube
+            '--extractor-args', 'youtube:player_client=ios,web',
+            '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+            '--sleep-requests', '1',
             video_url
         ], capture_output=True, text=True, timeout=840)  # 14 min timeout
 
@@ -78,6 +82,8 @@ def lambda_handler(event, context):
             '-o', subtitle_file,
             '--no-playlist',
             '--no-warnings',
+            '--extractor-args', 'youtube:player_client=ios,web',
+            '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
             video_url
         ], capture_output=True, text=True, timeout=120)
 
