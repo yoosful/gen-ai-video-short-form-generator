@@ -8,6 +8,7 @@ import { Duration, Size } from 'aws-cdk-lib/core';
 type DownloadVideoUrlProps = {
   bucket: IBucket;
   historyTable: ITable;
+  youtubeCookiesSecretName?: string;
 };
 
 export class DownloadVideoUrl extends Construct {
@@ -15,6 +16,8 @@ export class DownloadVideoUrl extends Construct {
 
   constructor(scope: Construct, id: string, props: DownloadVideoUrlProps) {
     super(scope, id);
+
+    const cookiesSecretName = props.youtubeCookiesSecretName || 'youtube-cookies';
 
     // yt-dlp Lambda Layer
     const ytdlpLayer = new lambda.LayerVersion(this, 'YtDlpLayer', {
@@ -28,13 +31,14 @@ export class DownloadVideoUrl extends Construct {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'lambda_function.lambda_handler',
       code: lambda.Code.fromAsset('amplify/custom/lambda-functions/download-video-url'),
-      timeout: Duration.minutes(15),  // Max Lambda timeout
-      memorySize: 3008,               // More memory for video download/upload
-      ephemeralStorageSize: Size.gibibytes(10),  // Max ephemeral storage for large videos
+      timeout: Duration.minutes(15),
+      memorySize: 3008,
+      ephemeralStorageSize: Size.gibibytes(10),
       layers: [ytdlpLayer],
       environment: {
         BUCKET_NAME: props.bucket.bucketName,
-        HISTORY_TABLE_NAME: props.historyTable.tableName
+        HISTORY_TABLE_NAME: props.historyTable.tableName,
+        YOUTUBE_COOKIES_SECRET: cookiesSecretName,
       }
     });
 
@@ -43,5 +47,12 @@ export class DownloadVideoUrl extends Construct {
 
     // Grant DynamoDB permissions
     props.historyTable.grantReadWriteData(this.handler);
+
+    // Grant Secrets Manager read access for YouTube cookies
+    this.handler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [`arn:aws:secretsmanager:*:*:secret:${cookiesSecretName}-*`],
+    }));
   }
 }

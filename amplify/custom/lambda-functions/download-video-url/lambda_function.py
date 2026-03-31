@@ -5,6 +5,22 @@ import os
 
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
+secrets_client = boto3.client('secretsmanager')
+
+def _get_cookies_path():
+    """Download YouTube cookies from Secrets Manager to /tmp."""
+    cookies_path = '/tmp/cookies.txt'
+    secret_name = os.environ.get('YOUTUBE_COOKIES_SECRET')
+    if not secret_name:
+        return None
+    try:
+        response = secrets_client.get_secret_value(SecretId=secret_name)
+        with open(cookies_path, 'w') as f:
+            f.write(response['SecretString'])
+        return cookies_path
+    except Exception as e:
+        print(f"Failed to load cookies from Secrets Manager: {e}")
+        return None
 
 def lambda_handler(event, context):
     """
@@ -29,27 +45,28 @@ def lambda_handler(event, context):
     try:
         # Use yt-dlp to download video
         yt_dlp_path = '/opt/python/bin/yt-dlp'
+        cookies_path = _get_cookies_path()
 
-        # Download video with bot detection workarounds
-        result = subprocess.run([
+        # Build yt-dlp command
+        cmd = [
             yt_dlp_path,
             '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             '--merge-output-format', 'mp4',
             '-o', output_file,
             '--no-playlist',
-            '--max-filesize', '2G',  # 2GB limit as decided
+            '--max-filesize', '2G',
             '--no-warnings',
             '--no-progress',
-            # Bot detection workarounds for YouTube
-            '--extractor-args', 'youtube:player_client=ios,web',
-            '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-            '--sleep-requests', '1',
-            video_url
-        ], capture_output=True, text=True, timeout=840)  # 14 min timeout
+        ]
+        if cookies_path:
+            cmd.extend(['--cookies', cookies_path])
+        cmd.append(video_url)
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=840)
 
         # Try to download subtitles (YouTube auto-captions or manual)
         subtitle_file = f"{download_path}/subtitle"
-        subtitle_result = subprocess.run([
+        sub_cmd = [
             yt_dlp_path,
             '--write-auto-sub',
             '--write-sub',
@@ -59,10 +76,12 @@ def lambda_handler(event, context):
             '-o', subtitle_file,
             '--no-playlist',
             '--no-warnings',
-            '--extractor-args', 'youtube:player_client=ios,web',
-            '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-            video_url
-        ], capture_output=True, text=True, timeout=120)
+        ]
+        if cookies_path:
+            sub_cmd.extend(['--cookies', cookies_path])
+        sub_cmd.append(video_url)
+
+        subtitle_result = subprocess.run(sub_cmd, capture_output=True, text=True, timeout=120)
 
         print(f"Subtitle download result: {subtitle_result.returncode}")
         print(f"Subtitle stderr: {subtitle_result.stderr}")
