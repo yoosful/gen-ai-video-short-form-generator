@@ -26,8 +26,7 @@ export const createHistory = async (
   modelID: string,
   numberOfVideos: number = 1,
   theme: string = "general",
-  videoLength: number = 60,
-  sourceType: string = "upload"
+  videoLength: number = 60
 ) => {
   const { data: newHistory } = await client.models.History.create({
     videoName,
@@ -36,8 +35,7 @@ export const createHistory = async (
     stage: 0,
     numberOfVideos,
     theme,
-    videoLength,
-    sourceType
+    videoLength
   });
 
   return newHistory;
@@ -68,26 +66,4 @@ export const subscribeHistory = async (id:string) => {
       }
     }
   });
-}
-
-export const downloadVideoFromUrl = async (
-  videoUrl: string,
-  videoName: string,
-  modelID: string,
-  historyId: string,
-  numberOfVideos: number = 1,
-  theme: string = "general",
-  videoLength: number = 60
-) => {
-  const { data } = await client.mutations.downloadVideo({
-    videoUrl,
-    videoName,
-    modelID,
-    historyId,
-    numberOfVideos,
-    theme,
-    videoLength
-  });
-
-  return data;
 }

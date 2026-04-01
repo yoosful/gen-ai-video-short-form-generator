@@ -1,8 +1,8 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { storage } from './storage/resource';
-import { data, generateShortFunction, downloadVideoFunction } from './data/resource'
-import { GenerateShortStateMachine, VideoUploadStateMachine, UnifiedReasoningStateMachine, DownloadVideoUrl } from './custom/resource';
+import { data, generateShortFunction } from './data/resource'
+import { GenerateShortStateMachine, VideoUploadStateMachine, UnifiedReasoningStateMachine } from './custom/resource';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { CfnBucket } from 'aws-cdk-lib/aws-s3';
 import { EventBus, CfnRule } from 'aws-cdk-lib/aws-events'
@@ -15,14 +15,13 @@ const backend = defineBackend({
   storage,
   data,
   generateShortFunction,
-  downloadVideoFunction,
 });
 
 // Configure base resources
 const s3Bucket = backend.storage.resources.bucket;
 const cfnBucket = s3Bucket.node.defaultChild as CfnBucket;
 cfnBucket.accelerateConfiguration = {
-  accelerationStatus: "Enabled" 
+  accelerationStatus: "Enabled"
 };
 cfnBucket.notificationConfiguration = {
   eventBridgeConfiguration: {
@@ -104,7 +103,7 @@ new CfnRule(eventStack, "AppSyncRule", {
           stage: "$.detail.stage",
         },
         inputTemplate: `{"videoId": "<videoId>", "stage": <stage>}`,
-      },  
+      },
     },
   ],
 });
@@ -190,35 +189,6 @@ generateShortFunc.lambda.addToRolePolicy(
 generateShortFunc.cfnResources.cfnFunction.environment = {
   variables: {
     STATE_MACHINE: generateShortStateMachine.stateMachine.stateMachineArn,
-    BUCKET_NAME: s3Bucket.bucketName,
-  }
-}
-
-// Download video from URL - use same stack as downloadVideoFunction to avoid circular deps
-const downloadVideoStack = backend.downloadVideoFunction.stack;
-const downloadVideoUrl = new DownloadVideoUrl(
-  downloadVideoStack,
-  "DownloadVideoUrl",
-  {
-    bucket: s3Bucket,
-    historyTable: historyTable,
-  }
-);
-
-const downloadVideoFunc = backend.downloadVideoFunction.resources;
-
-downloadVideoFunc.lambda.addToRolePolicy(
-  new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ["lambda:InvokeFunction"],
-    resources: [downloadVideoUrl.handler.functionArn],
-  }),
-);
-
-downloadVideoFunc.cfnResources.cfnFunction.environment = {
-  variables: {
-    DOWNLOAD_LAMBDA_ARN: downloadVideoUrl.handler.functionArn,
-    HISTORY_TABLE_NAME: historyTable.tableName,
     BUCKET_NAME: s3Bucket.bucketName,
   }
 }

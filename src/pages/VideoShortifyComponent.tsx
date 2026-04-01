@@ -18,7 +18,6 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
 
   const { id } = useParams();
   const [ stage, setStage ] = useState<number | null>(null);
-  const [ sourceType, setSourceType ] = useState<string | null>(null);
   const [ loading, setLoading ] = useState(true);
   const [ error, setError ] = useState<string | null>(null);
   const [ selectedTab, setSelectedTab ] = useState(0);
@@ -42,7 +41,6 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
         return;
       }
       setStage(history.stage);
-      setSourceType(history.sourceType ?? null);
       setLoading(false);
     }).catch((err) => {
       console.error("Failed to read history:", err);
@@ -86,53 +84,6 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
   if(stage === -1)
     return <Box textAlign='center'><Flashbar items={[{ type: "error", content: "Processing failed. Please try again." }]} /></Box>
 
-  const isUrlDownload = sourceType === "url";
-
-  const downloadStep = {
-    title: "Download video",
-    info: <Link variant="info">Info</Link>,
-    description: "Downloading video from URL. This may take a few minutes depending on video size.",
-    content: (
-      stage! > 0 ?
-      <Flashbar items={[{ type: "success", content: "Video downloaded and uploaded successfully." }]} />
-      : <InProgressComponent />
-    )
-  };
-
-  const transcribeStep = {
-    title: "Transcribe video",
-    info: <Link variant="info">Info</Link>,
-    description:
-      "It converts the audio of the video into text. This process may take about 5 minutes.",
-    content: (
-      stage! > 0 ?
-      <TranscribeComponent id={id!}/>
-      : <InProgressComponent />
-    )
-  };
-
-  const highlightStep = {
-    title: "Generate highlights",
-    content: (
-      stage! > 1 ?
-      <HighlightComponent id={id!} onTabChange={onTabChangeHandler}/>
-      : <InProgressComponent />
-    ),
-  };
-
-  const shortifyStep = {
-    title: "Shortify highlight",
-    content: (
-      stage! > 2 ?
-      <ShortifyComponent id={id!} tab={selectedTab} title={highlightTitle} ref={childRef}/>
-      : <InProgressComponent />
-    ),
-  };
-
-  const steps = isUrlDownload
-    ? [downloadStep, transcribeStep, highlightStep, shortifyStep]
-    : [transcribeStep, highlightStep, shortifyStep];
-
   return (
     <>
     <Wizard
@@ -155,7 +106,35 @@ const VideoShortify: React.FC<VideoShortifyProps> = () => {
       activeStepIndex={activeStepIndex}
       isLoadingNextStep={isLoadingNextStep}
       onSubmit={onSubmitHandler}
-      steps={steps}
+      steps={[
+        {
+          title: "Transcribe video",
+          info: <Link variant="info">Info</Link>,
+          description:
+            "It converts the audio of the video into text. This process may take about 5 minutes.",
+          content: (
+            stage! > 0 ?
+            <TranscribeComponent id={id!}/>
+            : <InProgressComponent />
+          )
+        },
+        {
+          title: "Generate highlights",
+          content: (
+            stage! > 1 ?
+            <HighlightComponent id={id!} onTabChange={onTabChangeHandler}/>
+            : <InProgressComponent />
+          ),
+        },
+        {
+          title: "Shortify highlight",
+          content: (
+            stage! > 2 ?
+            <ShortifyComponent id={id!} tab={selectedTab} title={highlightTitle} ref={childRef}/>
+            : <InProgressComponent />
+          ),
+        }
+      ]}
 
     />
     </>

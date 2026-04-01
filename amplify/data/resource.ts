@@ -9,11 +9,6 @@ export const generateShortFunction = defineFunction({
   resourceGroupName: "data"
 });
 
-export const downloadVideoFunction = defineFunction({
-  entry: "./downloadVideo.ts",
-  resourceGroupName: "data"
-});
-
 const schema = a.schema({
   History: a
     .model({
@@ -25,7 +20,6 @@ const schema = a.schema({
       numberOfVideos: a.integer().required(),
       theme: a.string().required(),
       videoLength: a.integer().required(),
-      sourceType: a.string(),
     })
     .authorization((allow) => [allow.owner()]),
 
@@ -51,7 +45,7 @@ const schema = a.schema({
   })
   .secondaryIndexes((index) => [index('type').sortKeys(['createdAt'])])
   .authorization((allow) => [allow.authenticated()]),
-  
+
   StageChanged: a.customType({
     videoId: a.string().required(),
     stage: a.integer().required(),
@@ -92,20 +86,6 @@ const schema = a.schema({
     .returns(a.string())
     .authorization((allow) => [allow.authenticated()])
     .handler(a.handler.function(generateShortFunction)),
-
-  downloadVideo: a.mutation()
-    .arguments({
-      videoUrl: a.string().required(),
-      videoName: a.string().required(),
-      modelID: a.string().required(),
-      historyId: a.string().required(),
-      numberOfVideos: a.integer(),
-      theme: a.string(),
-      videoLength: a.integer(),
-    })
-    .returns(a.string())
-    .authorization((allow) => [allow.authenticated()])
-    .handler(a.handler.function(downloadVideoFunction)),
 
 });
 
