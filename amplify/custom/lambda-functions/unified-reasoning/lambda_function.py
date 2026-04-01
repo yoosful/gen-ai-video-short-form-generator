@@ -185,9 +185,11 @@ CRITICAL NOTES:
     try:
         # Models that support extended thinking
         EXTENDED_THINKING_MODELS = [
-            'us.anthropic.claude-opus-4-6-v1:0',
+            'us.anthropic.claude-opus-4-6-v1',
             'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
         ]
+
+        text = ''
 
         if modelID in EXTENDED_THINKING_MODELS:
             # Use higher budget for Opus 4.6
@@ -205,19 +207,13 @@ CRITICAL NOTES:
                 additionalModelRequestFields=config
             )
 
-            print(response)
             content_blocks = response["output"]["message"]["content"]
 
-            reasoning = ''
-            text = ''
-
-            print(content_blocks)
-            
             for chunk in content_blocks:
                 if "text" in chunk:
                     text = chunk["text"]
 
-            print(f"Response text: {text}")
+            print(f"Response text: {text[:500]}")
 
         elif modelID == "us.deepseek.r1-v1:0":
             config = {
@@ -233,34 +229,58 @@ CRITICAL NOTES:
 
             content_blocks = response['output']["message"]["content"]
 
-            reasoning = ''
-            text = ''
-            
             for chunk in content_blocks:
                 if "text" in chunk:
                     text = chunk["text"]
                 elif "reasoningContent" in chunk:
-                    reasoning = chunk["reasoningContent"]["reasoningText"]
+                    print(f"Reasoning: {chunk['reasoningContent']['reasoningText'][:500]}")
 
-            print(f"Response text: {text}")
-            print(f"Reasoning: {reasoning}")
+            print(f"Response text: {text[:500]}")
+
+        else:
+            # Default path for non-thinking models (Nova, Sonnet 3.5, Haiku, etc.)
+            config = {
+                "temperature": 0,
+                "maxTokens": 32768
+            }
+            response = bedrock_runtime.converse(
+                modelId=modelID,
+                messages=messages,
+                system=system_prompts,
+                inferenceConfig=config
+            )
+
+            content_blocks = response['output']["message"]["content"]
+            for chunk in content_blocks:
+                if "text" in chunk:
+                    text = chunk["text"]
+
+            print(f"Response text: {text[:500]}")
 
         # Extract JSON from the response text
-        start_idx = text.find('{')
-        end_idx = text.rfind('}')
-        if start_idx != -1 and end_idx != -1:
-            json_str = text[start_idx:end_idx+1]
+        # Try <JSON> tags first
+        import re
+        json_match = re.search(r'<JSON>\s*(\{.*\})\s*</JSON>', text, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(1)
+        else:
+            # Fallback: find outermost { }
+            start_idx = text.find('{')
+            end_idx = text.rfind('}')
+            json_str = text[start_idx:end_idx+1] if start_idx != -1 and end_idx != -1 else None
+
+        if json_str:
             try:
                 result = json.loads(json_str)
                 # Sort timeframes for each highlight
                 for highlight in result['highlights']:
                     highlight['timeframes'].sort(key=lambda x: x[0])  # Sort by start time
-                return result['highlights'][:num_videos]  # Ensure we only return the requested number of videos
+                return result['highlights'][:num_videos]
             except json.JSONDecodeError as e:
-                print(f"Failed to parse JSON from response: {json_str}")
+                print(f"Failed to parse JSON from response: {json_str[:1000]}")
                 raise Exception(f"JSON parsing error: {str(e)}")
         else:
-            print(f"No JSON found in response: {text}")
+            print(f"No JSON found in response: {text[:1000]}")
             raise Exception("No valid JSON found in model response")
 
     except Exception as e:
