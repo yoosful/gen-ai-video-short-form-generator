@@ -13,7 +13,7 @@ export const modelOptions: ModelOption[] = [
   {
     name: "Claude Opus 4.6 (Recommended)",
     logo: "logos/anthropic-logo.png",
-    modelId: "us.anthropic.claude-opus-4-6-v1:0",
+    modelId: "us.anthropic.claude-opus-4-6-v1",
     provider: "Anthropic"
   },
   {
