@@ -20,7 +20,7 @@ const VideoUploadComponent: React.FC = () => {
     label: "Claude 3.7 Sonnet",
     value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
   });
-  const [numberOfVideos, setNumberOfVideos] = useState("1");
+  const [numberOfVideos, setNumberOfVideos] = useState("5");
   const [theme, setTheme] = useState("");
   const [videoLength, setVideoLength] = useState("60");
   const navigate = useNavigate();

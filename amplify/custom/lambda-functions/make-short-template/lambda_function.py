@@ -25,20 +25,51 @@ def create_new_video(uuid, index, bucket_name, sections, vertical, videoName):
     input_file = f'videos/{uuid}/FHD/{index}-FHD.mp4'
     subtitle = f'videos/{uuid}/ShortsTranscript/{index}-TranscriptShorts.vtt'
     output_location = f'videos/{uuid}/Final'
-    
+
+    # Determine mode: None = letterbox, True = vertical (9:12), False = square (1:1)
+    is_letterbox = vertical is None
+
     InputsTemplates = []
 
     start_time = 0.0
     buffer_time = 0
     sections_total_duration = 0.0
-    
+
     for i, section in enumerate(sections):
         section_duration = float(section["SectionDuration"])
         end_time = start_time + section_duration
         sections_total_duration += section_duration
-        
+
         start_timecode = convert_seconds_to_timecode(start_time)
         end_timecode = convert_seconds_to_timecode(end_time)
+
+        if is_letterbox:
+            # Letterbox: full 1920x1080 video scaled to 1080x608, centered at Y=656
+            crop = {
+                'Height': 1080,
+                'Width': 1920,
+                'X': 0,
+                'Y': 0
+            }
+            position = {
+                "Height": 608,
+                "Width": 1080,
+                "X": 0,
+                "Y": 656
+            }
+        else:
+            crop = {
+                'Height': int(section["CropHeight"]),
+                'Width': int(section["CropWidth"]),
+                'X': int(section["Xoffset"]),
+                'Y': int(section["Yoffset"])
+            }
+            position = {
+                "Height": 1440 if vertical else 1080,
+                "Width": 1080,
+                "X": 0,
+                "Y": 240 if vertical else 420
+            }
 
         details = {
             "VideoSelector": {
@@ -51,18 +82,8 @@ def create_new_video(uuid, index, bucket_name, sections, vertical, videoName):
                     'EndTimecode': end_timecode
                 }
             ],
-            'Crop': {
-                'Height': int(section["CropHeight"]),
-                'Width': int(section["CropWidth"]),
-                'X': int(section["Xoffset"]),
-                'Y': int(section["Yoffset"])
-            },
-            "Position": {
-                "Height": 1440 if vertical else 1080,
-                "Width": 1080,
-                "X": 0,
-                "Y": 240 if vertical else 420
-            },
+            'Crop': crop,
+            "Position": position,
             "AudioSelectors": {
                 "Audio Selector 1": {
                     "DefaultSelection": "DEFAULT"
@@ -161,7 +182,7 @@ def create_new_video(uuid, index, bucket_name, sections, vertical, videoName):
                                     'FontScript': 'AUTOMATIC',
                                     'FontSize': 36,
                                     'TeletextSpacing': 'PROPORTIONAL',
-                                    'YPosition': 1700 if vertical else 1550
+                                    'YPosition': 1350 if is_letterbox else (1700 if vertical else 1550)
                                 }
                             },
                             "LanguageCode": 'KOR'

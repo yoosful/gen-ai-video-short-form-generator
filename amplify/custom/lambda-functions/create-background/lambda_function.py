@@ -52,12 +52,19 @@ def lambda_handler(event, context):
     vertical = event['inputs'][0]['Vertical']
     
     image_width = 1080
-    
-    if vertical:
+    is_letterbox = vertical is None
+
+    if is_letterbox:
+        # Letterbox: video at Y=656, height=608. Top 656px for title.
+        title_height = 656
+        image_height = 1920
+        initial_text_size = 84
+        source_key = None  # Generate pure black background
+    elif vertical:
         source_key = 'assets/shorts-background-vertical.png'
         title_height = 240
         image_height = 1920
-        initial_text_size = 60  # Start with larger size and scale down if needed
+        initial_text_size = 60
     else:
         source_key = 'assets/shorts-background-1x1.png'
         title_height = 420
@@ -66,12 +73,15 @@ def lambda_handler(event, context):
     
     destination_dir = f'videos/{uuid}/background'
     
-    # Load and resize base image
-    response_image = s3.get_object(Bucket=bucket_name, Key=source_key)['Body'].read()
-    base_image = Image.open(BytesIO(response_image))
-    
-    if base_image.size != (image_width, image_height):
-        base_image = base_image.resize((image_width, image_height), Image.LANCZOS)
+    # Load or create base image
+    if source_key:
+        response_image = s3.get_object(Bucket=bucket_name, Key=source_key)['Body'].read()
+        base_image = Image.open(BytesIO(response_image))
+        if base_image.size != (image_width, image_height):
+            base_image = base_image.resize((image_width, image_height), Image.LANCZOS)
+    else:
+        # Letterbox: create black background (video area will be rendered by MediaConvert)
+        base_image = Image.new('RGB', (image_width, image_height), (0, 0, 0))
     
     draw = ImageDraw.Draw(base_image)
     

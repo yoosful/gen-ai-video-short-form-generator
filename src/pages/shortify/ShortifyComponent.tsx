@@ -59,7 +59,7 @@ interface SectionInput {
   Vertical: boolean | null;
 };
 
-type AspectRatio = '1:1' | '9:12';
+type AspectRatio = '1:1' | '9:12' | '16:9';
 
 
 const ShortifyComponent =  forwardRef((props: ShortifyComponentProps, ref) => {
@@ -229,33 +229,42 @@ const ShortifyComponent =  forwardRef((props: ShortifyComponentProps, ref) => {
       const {start, end, section} = playerSection;
       const {x, y, height} = section;
 
-      console.log(containerRef.current?.clientWidth, containerRef.current?.clientHeight)
-  
-      var xOffset = Math.floor(x/containerRef.current!.clientWidth*1920);
-      xOffset % 2 !== 0 ? xOffset-- : xOffset;
-  
-      var yOffset = Math.floor(y/containerRef.current!.clientHeight*1080);
-      yOffset % 2 !== 0 ? yOffset-- : yOffset;
-  
-      var croppedHeight = Math.floor(height/containerRef.current!.clientHeight*1080);
-      croppedHeight % 2 !== 0 ? croppedHeight-- : croppedHeight;
-      
-      // Update width calculation based on aspect ratio
-      var croppedWidth = aspectRatio === '1:1' 
-        ? croppedHeight 
-        : Math.floor(croppedHeight * 9/12);
-      croppedWidth % 2 !== 0 ? croppedWidth-- : croppedWidth;
-  
       const length = (end-start) * playerRef.current!.getDuration();
-  
-      inputs.push({
-        CropHeight: croppedHeight.toString(),
-        CropWidth: croppedWidth.toString(),
-        Xoffset: xOffset.toString(),
-        Yoffset: yOffset.toString(),
-        SectionDuration: length.toString(),
-        Vertical: aspectRatio === '1:1' ? false : true
-      })
+
+      if (aspectRatio === '16:9') {
+        // Letterbox: use full video frame, no cropping
+        inputs.push({
+          CropHeight: "1080",
+          CropWidth: "1920",
+          Xoffset: "0",
+          Yoffset: "0",
+          SectionDuration: length.toString(),
+          Vertical: null  // Signal letterbox mode
+        });
+      } else {
+        var xOffset = Math.floor(x/containerRef.current!.clientWidth*1920);
+        xOffset % 2 !== 0 ? xOffset-- : xOffset;
+
+        var yOffset = Math.floor(y/containerRef.current!.clientHeight*1080);
+        yOffset % 2 !== 0 ? yOffset-- : yOffset;
+
+        var croppedHeight = Math.floor(height/containerRef.current!.clientHeight*1080);
+        croppedHeight % 2 !== 0 ? croppedHeight-- : croppedHeight;
+
+        var croppedWidth = aspectRatio === '1:1'
+          ? croppedHeight
+          : Math.floor(croppedHeight * 9/12);
+        croppedWidth % 2 !== 0 ? croppedWidth-- : croppedWidth;
+
+        inputs.push({
+          CropHeight: croppedHeight.toString(),
+          CropWidth: croppedWidth.toString(),
+          Xoffset: xOffset.toString(),
+          Yoffset: yOffset.toString(),
+          SectionDuration: length.toString(),
+          Vertical: aspectRatio === '1:1' ? false : true
+        });
+      }
     });
     
     return JSON.stringify(inputs);
@@ -477,19 +486,22 @@ const ShortifyComponent =  forwardRef((props: ShortifyComponentProps, ref) => {
             options={[
               { text: "Square (1:1)", id: "1:1" },
               { text: "Vertical (9:12)", id: "9:12" },
+              { text: "Letterbox (16:9)", id: "16:9" },
             ]}
           />
           
           { videoUrl !== "" &&
           <>
             <div className='container' ref={containerRef}>
-              <animated.div 
-                className='cropped-area' 
-                style={{ x, y, width, height}} 
-                {...bind()}
-              >
-                <div className='resizer' ref={dragEl}></div>
-              </animated.div>
+              {aspectRatio !== '16:9' && (
+                <animated.div
+                  className='cropped-area'
+                  style={{ x, y, width, height}}
+                  {...bind()}
+                >
+                  <div className='resizer' ref={dragEl}></div>
+                </animated.div>
+              )}
               <ReactPlayer
                 url={videoUrl} 
                 ref={playerRef}
