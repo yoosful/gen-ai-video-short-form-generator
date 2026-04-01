@@ -86,6 +86,62 @@ export class UnifiedReasoningStateMachine extends Construct {
       resultPath: sfn.JsonPath.DISCARD,
     });
 
+    // Extract audio from video before transcription to avoid Transcribe 2GB file size limit
+    const extractAudioJob = new tasks.MediaConvertCreateJob(this, 'ExtractAudioJob', {
+      createJobRequest: {
+        "Role": mediaConvertRole.roleArn,
+        "Settings": {
+          "TimecodeConfig": { "Source": "ZEROBASED" },
+          "Inputs": [
+            {
+              "FileInput.$": "$.raw_file_uri",
+              "AudioSelectors": {
+                "Audio Selector 1": { "DefaultSelection": "DEFAULT" }
+              },
+              "TimecodeSource": "ZEROBASED"
+            }
+          ],
+          "OutputGroups": [
+            {
+              "Name": "FileGroup",
+              "Outputs": [
+                {
+                  "ContainerSettings": { "Container": "MP4", "Mp4Settings": {} },
+                  "AudioDescriptions": [
+                    {
+                      "CodecSettings": {
+                        "Codec": "AAC",
+                        "AacSettings": {
+                          "Bitrate": 96000,
+                          "CodingMode": "CODING_MODE_2_0",
+                          "SampleRate": 48000
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "OutputGroupSettings": {
+                "Type": "FILE_GROUP_SETTINGS",
+                "FileGroupSettings": {
+                  "Destination.$": "States.Format('s3://{}/videos/{}/AUDIO', $.bucket_name, $.uuid)"
+                }
+              }
+            }
+          ]
+        }
+      },
+      integrationPattern: sfn.IntegrationPattern.RUN_JOB,
+      resultPath: sfn.JsonPath.DISCARD
+    });
+
+    const prepareAudioUri = new sfn.Pass(this, 'PrepareAudioUri', {
+      parameters: {
+        "audio_file_uri.$": "States.Format('s3://{}/videos/{}/AUDIO.mp4', $.bucket_name, $.uuid)"
+      },
+      resultPath: "$.audioExtraction"
+    });
+
     const startTranscriptionJob = new tasks.CallAwsService(this, 'StartTranscriptionJob', {
       service: 'transcribe',
       action: 'startTranscriptionJob',
@@ -93,7 +149,7 @@ export class UnifiedReasoningStateMachine extends Construct {
       iamResources: ['*'],
       parameters: {
         "TranscriptionJobName.$": "$.TranscriptionJobName",
-        "Media": { "MediaFileUri.$": "$.raw_file_uri" },
+        "Media": { "MediaFileUri.$": "$.audioExtraction.audio_file_uri" },
         "OutputBucketName.$": "$.bucket_name",
         "OutputKey.$": "$.OutputKey",
         "LanguageOptions": ["en-US", "ko-KR"],
@@ -266,7 +322,9 @@ export class UnifiedReasoningStateMachine extends Construct {
     // Definition body
     const definitionBody = prepareParameters
       .next(checkSubtitles
-        .addCatch(startTranscriptionJob
+        .addCatch(extractAudioJob
+          .next(prepareAudioUri)
+          .next(startTranscriptionJob)
           .next(waitForTranscriptionJob)
           .next(getTranscriptionJobStatus)
           .next(checkTranscriptionJobStatus
