@@ -92,8 +92,10 @@ def unified_reasoning(script, modelID, vtt_segments, theme, num_videos, video_le
             text_to_segments[text] = (segment['start'], segment['end'])
 
     # Calculate word count range based on video length
-    min_words = max(20, int(float(video_length) * 1.5))  # Minimum 20 words
-    max_words = int(float(video_length) * 2.5)  # Allow for natural speech variations
+    # Average speaking rate: ~180 words/min (3 words/sec)
+    # Use 2.75-3.25 multiplier to account for natural speech rate
+    min_words = int(float(video_length) * 2.75)  # Lower bound for natural speech
+    max_words = int(float(video_length) * 3.25)  # Upper bound for natural speech
 
     prompt = f"""
 INPUT FORMAT:
