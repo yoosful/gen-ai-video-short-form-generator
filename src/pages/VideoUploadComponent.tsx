@@ -17,8 +17,8 @@ const VideoUploadComponent: React.FC = () => {
   const [tileValue, setTileValue] = useState("upload");
   const [uuid, setUuid] = useState("");
   const [selectedModel, setSelectedModel] = useState({
-    label: "Claude 3.7 Sonnet",
-    value: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    label: "Claude Opus 4.6 (Recommended)",
+    value: "us.anthropic.claude-opus-4-6-v1",
   });
   const [numberOfVideos, setNumberOfVideos] = useState("5");
   const [theme, setTheme] = useState("");
