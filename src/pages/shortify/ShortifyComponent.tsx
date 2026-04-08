@@ -68,7 +68,7 @@ const ShortifyComponent =  forwardRef((props: ShortifyComponentProps, ref) => {
   const playerRef = useRef<ReactPlayer>(null);
   const [played, setPlayed] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
 
   const [{x, y, width, height}, api] = useSpring(() => ({ 
     x: 0, 
@@ -492,8 +492,29 @@ const ShortifyComponent =  forwardRef((props: ShortifyComponentProps, ref) => {
           
           { videoUrl !== "" &&
           <>
-            <div className='container' ref={containerRef}>
-              {aspectRatio !== '16:9' && (
+            {aspectRatio === '16:9' ? (
+              <div className='letterbox-preview'>
+                <div className='letterbox-title-area'>
+                  <span className='letterbox-title-text'>{title || 'Title'}</span>
+                </div>
+                <div className='letterbox-video-area' ref={containerRef}>
+                  <ReactPlayer
+                    url={videoUrl}
+                    ref={playerRef}
+                    className='player'
+                    playing={playing}
+                    controls={false}
+                    width='100%'
+                    height='100%'
+                    onProgress={({ played }) => setPlayed(played)}
+                  />
+                </div>
+                <div className='letterbox-caption-area'>
+                  <span className='letterbox-caption-text'>Caption area</span>
+                </div>
+              </div>
+            ) : (
+              <div className='container' ref={containerRef}>
                 <animated.div
                   className='cropped-area'
                   style={{ x, y, width, height}}
@@ -501,18 +522,18 @@ const ShortifyComponent =  forwardRef((props: ShortifyComponentProps, ref) => {
                 >
                   <div className='resizer' ref={dragEl}></div>
                 </animated.div>
-              )}
-              <ReactPlayer
-                url={videoUrl} 
-                ref={playerRef}
-                className='player'
-                playing={playing} 
-                controls={false} 
-                width='100%'
-                height='100%'
-                onProgress={({ played }) => setPlayed(played)}
-              />
-            </div>
+                <ReactPlayer
+                  url={videoUrl}
+                  ref={playerRef}
+                  className='player'
+                  playing={playing}
+                  controls={false}
+                  width='100%'
+                  height='100%'
+                  onProgress={({ played }) => setPlayed(played)}
+                />
+              </div>
+            )}
             <br />
             <input
               type='range'

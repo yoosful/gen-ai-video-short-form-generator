@@ -33,3 +33,49 @@
   height: 100%;
   background-color: black;
 }
+
+/* Letterbox preview - mimics final 9:16 output layout */
+.letterbox-preview {
+  display: flex;
+  flex-direction: column;
+  background-color: #000;
+  aspect-ratio: 9 / 16;
+  max-height: 600px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.letterbox-title-area {
+  flex: 656;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.letterbox-title-text {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  word-break: break-word;
+}
+
+.letterbox-video-area {
+  flex: 608;
+  position: relative;
+  background-color: #111;
+}
+
+.letterbox-caption-area {
+  flex: 656;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.letterbox-caption-text {
+  color: #666;
+  font-size: 12px;
+}

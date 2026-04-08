@@ -180,9 +180,10 @@ def create_new_video(uuid, index, bucket_name, sections, vertical, videoName):
                                     'FontColor': 'WHITE',
                                     'FontOpacity': 255,
                                     'FontScript': 'AUTOMATIC',
-                                    'FontSize': 36,
+                                    'FontSize': 18 if is_letterbox else 36,
+                                    'OutlineSize': 1 if is_letterbox else 0,
                                     'TeletextSpacing': 'PROPORTIONAL',
-                                    'YPosition': 1350 if is_letterbox else (1700 if vertical else 1550)
+                                    'YPosition': 1300 if is_letterbox else (1700 if vertical else 1550)
                                 }
                             },
                             "LanguageCode": 'KOR'

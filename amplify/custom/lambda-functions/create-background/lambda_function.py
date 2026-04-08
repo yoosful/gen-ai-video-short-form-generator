@@ -80,8 +80,11 @@ def lambda_handler(event, context):
         if base_image.size != (image_width, image_height):
             base_image = base_image.resize((image_width, image_height), Image.LANCZOS)
     else:
-        # Letterbox: create black background (video area will be rendered by MediaConvert)
-        base_image = Image.new('RGB', (image_width, image_height), (0, 0, 0))
+        # Letterbox: create RGBA background with transparent video area
+        base_image = Image.new('RGBA', (image_width, image_height), (0, 0, 0, 255))
+        # Make the video area (Y=656, Height=608) transparent so video shows through
+        video_area = Image.new('RGBA', (image_width, 608), (0, 0, 0, 0))
+        base_image.paste(video_area, (0, 656))
     
     draw = ImageDraw.Draw(base_image)
     
